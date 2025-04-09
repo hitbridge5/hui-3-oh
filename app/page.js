@@ -65,7 +65,7 @@ export default function Home() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
+    <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen font-sans text-gray-900">
       {/* Left Panel: Form + Chat */}
       <div className="bg-white p-6 md:p-10 border-r border-gray-200">
         <h1 className="text-2xl font-bold mb-6">HUI — Internal Website Builder</h1>
@@ -162,7 +162,7 @@ export default function Home() {
       <div className="bg-gray-50 overflow-auto p-6">
         <h2 className="text-lg font-semibold mb-4">Live Preview</h2>
         <div
-          className="border border-gray-300 rounded-lg bg-white p-4 min-h-[90vh] text-black text-base"
+          className="border border-gray-300 rounded-lg bg-white p-4 min-h-[90vh] text-black text-base font-sans"
           dangerouslySetInnerHTML={{ __html: html }}
         ></div>
       </div>
