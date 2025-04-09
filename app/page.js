@@ -14,11 +14,11 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({}), // no form data, uses hardcoded prompt in backend
       });
 
       const data = await res.json();
-      setResult(JSON.stringify(data, null, 2)); // 🔥 show full response
+      setResult(JSON.stringify(data, null, 2)); // show full GPT response
     } catch (err) {
       setResult("Fetch error: " + err.message);
     }
