@@ -116,7 +116,7 @@ export default function Home() {
       <div className="bg-gray-50 overflow-auto p-6">
         <h2 className="text-lg font-semibold mb-4">Live Preview</h2>
         <div
-          className="border border-gray-300 rounded-lg bg-white p-4 min-h-[90vh]"
+          className="border border-gray-300 rounded-lg bg-white p-4 min-h-[90vh] text-black text-base"
           dangerouslySetInnerHTML={{ __html: html }}
         ></div>
       </div>
