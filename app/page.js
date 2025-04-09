@@ -1,47 +1,125 @@
+// ✅ app/page.js
 "use client";
 import { useState } from "react";
 
 export default function Home() {
-  const [result, setResult] = useState("");
+  const [formData, setFormData] = useState({
+    businessType: "",
+    websiteGoal: "",
+    designStyle: "",
+    customNotes: "",
+  });
+  const [html, setHtml] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setResult("");
+    setHtml("");
 
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}), // no form data, uses hardcoded prompt in backend
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
-      setResult(JSON.stringify(data, null, 2)); // show full GPT response
+      const content = data.code || data.choices?.[0]?.message?.content || "No output.";
+      setHtml(content);
     } catch (err) {
-      setResult("Fetch error: " + err.message);
+      setHtml("Error generating site.");
     }
 
     setLoading(false);
   };
 
   return (
-    <main className="min-h-screen p-10 font-sans max-w-3xl mx-auto text-black">
-      <h1 className="text-2xl font-bold mb-6">DEBUG MODE: GPT Output</h1>
-      <form onSubmit={handleSubmit}>
-        <button
-          type="submit"
-          className="bg-black text-white px-5 py-2 rounded"
-          disabled={loading}
-        >
-          {loading ? "Generating..." : "Submit Test Prompt"}
-        </button>
-      </form>
+    <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
+      {/* Left Panel: Form */}
+      <div className="bg-white p-6 md:p-10 border-r border-gray-200">
+        <h1 className="text-2xl font-bold mb-6">HUI — Internal Website Builder</h1>
 
-      <pre className="mt-6 bg-gray-100 p-4 rounded text-sm whitespace-pre-wrap">
-        {result || "Waiting for response..."}
-      </pre>
-    </main>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block font-medium mb-1">Business Type</label>
+            <select
+              name="businessType"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select...</option>
+              <option>HVAC</option>
+              <option>Restaurant</option>
+              <option>Plumber</option>
+              <option>Electrician</option>
+              <option>General Service</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-medium mb-1">Website Goal</label>
+            <input
+              type="text"
+              name="websiteGoal"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+              placeholder="e.g., lead generation, bookings..."
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium mb-1">Design Style</label>
+            <select
+              name="designStyle"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select...</option>
+              <option>Clean & Professional</option>
+              <option>Bold & Modern</option>
+              <option>Elegant & Soft</option>
+              <option>Dark & Techy</option>
+              <option>Minimal</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-medium mb-1">Custom Notes (Optional)</label>
+            <textarea
+              name="customNotes"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+              rows="4"
+              placeholder="Anything specific to include in the site?"
+              onChange={handleChange}
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 w-full"
+            disabled={loading}
+          >
+            {loading ? "Generating..." : "Generate Website"}
+          </button>
+        </form>
+      </div>
+
+      {/* Right Panel: Preview */}
+      <div className="bg-gray-50 overflow-auto p-6">
+        <h2 className="text-lg font-semibold mb-4">Live Preview</h2>
+        <div
+          className="border border-gray-300 rounded-lg bg-white p-4 min-h-[90vh]"
+          dangerouslySetInnerHTML={{ __html: html }}
+        ></div>
+      </div>
+    </div>
   );
 }
