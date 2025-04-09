@@ -1,24 +1,12 @@
 export async function POST(req) {
   const body = await req.json();
 
-  console.log("📦 Incoming request body:", body);
-  console.log("🔑 OpenAI key present?", !!process.env.OPENAI_API_KEY);
-
   if (!process.env.OPENAI_API_KEY) {
-    return new Response(JSON.stringify({ code: "Missing OpenAI API key." }), {
+    return new Response(JSON.stringify({ error: "Missing OpenAI API key" }), {
       headers: { "Content-Type": "application/json" },
       status: 500,
     });
   }
-
-  const prompt = `
-    Create a professional small business website layout using HTML and Tailwind CSS only.
-    Business Type: ${body.businessType}
-    Goal: ${body.websiteGoal}
-    Style: ${body.designStyle}
-    Notes: ${body.customNotes || "None"}
-    Use semantic HTML5, no external JS or CSS, and style the page with Tailwind.
-  `;
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -30,39 +18,38 @@ export async function POST(req) {
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
         messages: [
-          { role: "system", content: "You are a web developer that returns HTML and Tailwind code only. No explanations." },
-          { role: "user", content: prompt },
+          {
+            role: "user",
+            content: "Build a simple 1-page HVAC website using HTML and Tailwind. Include a hero, services, and contact form.",
+          },
         ],
         temperature: 0.5,
-        max_tokens: 1800,
+        max_tokens: 1200,
       }),
     });
 
     const json = await response.json();
-    console.log("🧠 GPT raw response:", JSON.stringify(json, null, 2));
 
-    const generatedCode = json.choices?.[0]?.message?.content;
-
-    if (!generatedCode) {
-      console.error("⚠️ GPT response missing content field.");
-      return new Response(JSON.stringify({ code: "GPT response was empty." }), {
-        headers: { "Content-Type": "application/json" },
-        status: 500,
-      });
-    }
-
+    // 💥 Return full GPT response directly to browser
     return new Response(JSON.stringify({
-      raw: json,
+      fullResponse: json,
       debug: {
-        choicesLength: json.choices?.length || 0,
-        messageContent: json.choices?.[0]?.message?.content || null,
-        usage: json.usage || null,
-        error: json.error || null
-      }
+        error: json.error || null,
+        choices: json.choices || null,
+        firstChoice: json.choices?.[0] || null,
+        content: json.choices?.[0]?.message?.content || null,
+      },
     }, null, 2), {
       headers: { "Content-Type": "application/json" },
     });
-    
+
+  } catch (error) {
+    return new Response(JSON.stringify({
+      error: "GPT fetch failed",
+      detail: error.message
+    }), {
+      headers: { "Content-Type": "application/json" },
+      status: 500,
+    });
   }
 }
-
