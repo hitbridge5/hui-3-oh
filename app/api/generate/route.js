@@ -28,7 +28,7 @@ export async function POST(req) {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: "You are a web developer that returns HTML and Tailwind code only. No explanations." },
           { role: "user", content: prompt },
@@ -51,16 +51,18 @@ export async function POST(req) {
       });
     }
 
-    return new Response(JSON.stringify({ code: generatedCode }), {
+    return new Response(JSON.stringify({
+      raw: json,
+      debug: {
+        choicesLength: json.choices?.length || 0,
+        messageContent: json.choices?.[0]?.message?.content || null,
+        usage: json.usage || null,
+        error: json.error || null
+      }
+    }, null, 2), {
       headers: { "Content-Type": "application/json" },
     });
-
-  } catch (error) {
-    console.error("🔥 GPT fetch error:", error);
-    return new Response(JSON.stringify({ code: "GPT error occurred." }), {
-      headers: { "Content-Type": "application/json" },
-      status: 500,
-    });
+    
   }
 }
 
