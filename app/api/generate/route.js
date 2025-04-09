@@ -1,6 +1,9 @@
 export async function POST(req) {
   const body = await req.json();
 
+  console.log("📥 Incoming form data:", body);
+  console.log("🔑 OpenAI key exists:", !!process.env.OPENAI_API_KEY);
+
   if (!process.env.OPENAI_API_KEY) {
     return new Response(JSON.stringify({ code: "Missing OpenAI API key." }), {
       headers: { "Content-Type": "application/json" },
@@ -8,13 +11,16 @@ export async function POST(req) {
     });
   }
 
+  // Basic fallback if something comes in empty
+  const fallback = "Build a basic HVAC website with Tailwind, including a hero, service list, and contact form.";
+
   const prompt = `
     Build a responsive 1-page website using HTML and Tailwind CSS only.
-    Business Type: ${body.businessType}
-    Goal: ${body.websiteGoal}
-    Style: ${body.designStyle}
-    Notes: ${body.customNotes || "None"}
-    Return only the complete HTML content, no explanation.
+    Business Type: ${body.businessType || "HVAC"}
+    Goal: ${body.websiteGoal || "Lead generation"}
+    Style: ${body.designStyle || "Clean & Professional"}
+    Notes: ${body.customNotes || "Include a contact form"}
+    Return only the full HTML code. No extra text or commentary.
   `;
 
   try {
@@ -25,13 +31,10 @@ export async function POST(req) {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo-1106", // faster and more stable than default
+        model: "gpt-3.5-turbo-1106",
         messages: [
-          {
-            role: "system",
-            content: "You are a web developer. Only return complete HTML files using Tailwind CSS.",
-          },
-          { role: "user", content: prompt },
+          { role: "system", content: "You are a professional frontend web developer." },
+          { role: "user", content: prompt.trim() || fallback },
         ],
         temperature: 0.4,
         max_tokens: 1600,
@@ -40,24 +43,25 @@ export async function POST(req) {
 
     const json = await response.json();
 
-    const generatedCode = json.choices?.[0]?.message?.content;
+    console.log("🧠 GPT Response JSON:", JSON.stringify(json, null, 2));
 
-    console.log("✅ GPT Output:", generatedCode);
+    const html = json.choices?.[0]?.message?.content;
 
-    if (!generatedCode) {
-      return new Response(JSON.stringify({ code: "GPT responded with no usable content." }), {
+    if (!html) {
+      console.error("⚠️ GPT returned no usable content.");
+      return new Response(JSON.stringify({ code: "GPT returned empty content." }), {
         headers: { "Content-Type": "application/json" },
         status: 500,
       });
     }
 
-    return new Response(JSON.stringify({ code: generatedCode }), {
+    return new Response(JSON.stringify({ code: html }), {
       headers: { "Content-Type": "application/json" },
     });
 
   } catch (error) {
     console.error("🔥 GPT error:", error.message);
-    return new Response(JSON.stringify({ code: "Error generating content.", error: error.message }), {
+    return new Response(JSON.stringify({ code: "Error from GPT call.", error: error.message }), {
       headers: { "Content-Type": "application/json" },
       status: 500,
     });
