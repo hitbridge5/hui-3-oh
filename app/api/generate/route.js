@@ -4,9 +4,7 @@ export async function POST(req) {
   console.log("📦 Incoming request body:", body);
   console.log("🔑 OpenAI key present?", !!process.env.OPENAI_API_KEY);
 
-  // Catch missing key
   if (!process.env.OPENAI_API_KEY) {
-    console.error("❌ OPENAI_API_KEY is missing.");
     return new Response(JSON.stringify({ code: "Missing OpenAI API key." }), {
       headers: { "Content-Type": "application/json" },
       status: 500,
@@ -14,12 +12,12 @@ export async function POST(req) {
   }
 
   const prompt = `
-    Build a clean, responsive small business website using HTML and Tailwind CSS.
+    Create a professional small business website layout using HTML and Tailwind CSS only.
     Business Type: ${body.businessType}
     Goal: ${body.websiteGoal}
     Style: ${body.designStyle}
     Notes: ${body.customNotes || "None"}
-    Use semantic markup and no external dependencies.
+    Use semantic HTML5, no external JS or CSS, and style the page with Tailwind.
   `;
 
   try {
@@ -32,27 +30,37 @@ export async function POST(req) {
       body: JSON.stringify({
         model: "gpt-4",
         messages: [
-          { role: "system", content: "You are a professional web developer." },
+          { role: "system", content: "You are a web developer that returns HTML and Tailwind code only. No explanations." },
           { role: "user", content: prompt },
         ],
-        temperature: 0.7,
+        temperature: 0.5,
+        max_tokens: 1800,
       }),
     });
 
     const json = await response.json();
     console.log("🧠 GPT raw response:", JSON.stringify(json, null, 2));
 
-    const generatedCode = json.choices?.[0]?.message?.content || "No output from GPT.";
+    const generatedCode = json.choices?.[0]?.message?.content;
+
+    if (!generatedCode) {
+      console.error("⚠️ GPT response missing content field.");
+      return new Response(JSON.stringify({ code: "GPT response was empty." }), {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
 
     return new Response(JSON.stringify({ code: generatedCode }), {
       headers: { "Content-Type": "application/json" },
     });
 
   } catch (error) {
-    console.error("🔥 Error calling GPT:", error);
+    console.error("🔥 GPT fetch error:", error);
     return new Response(JSON.stringify({ code: "GPT error occurred." }), {
       headers: { "Content-Type": "application/json" },
       status: 500,
     });
   }
 }
+
